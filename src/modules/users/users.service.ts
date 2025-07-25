@@ -51,12 +51,20 @@ export class UsersService {
   updateUser(id: string, data: UserPatchDto): string | NotFoundException {
     const user = this.usersDB[id];
 
-    if (!user) {
-      if (!user) throw new NotFoundException();
-    }
+    if (!user) throw new NotFoundException();
 
     const { password, email, id: userId } = user;
-    this.usersDB[id] = { password, id: userId, email, ...data };
+
+    const updatedUser: IUsersData = {
+      ...user,
+      ...data,
+      birthDate: data.birthDate ? new Date(data.birthDate) : undefined, // 👈 преобразуем string → Date
+      password,
+      email,
+      id: userId,
+    };
+
+    this.usersDB[id] = updatedUser;
 
     return 'ok';
   }
