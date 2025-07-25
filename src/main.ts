@@ -6,7 +6,12 @@ import * as cookieParser from 'cookie-parser';
 import * as session from 'express-session';
 
 async function bootstrap(): Promise<void> {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    cors: {
+      origin: 'https://t1-forms-auth-client.onrender.com',
+      credentials: true,
+    },
+  });
 
   const config = new DocumentBuilder()
     .setTitle('Users API')
@@ -39,4 +44,4 @@ async function bootstrap(): Promise<void> {
   await app.listen(process.env.PORT ?? 4000);
 }
 
-bootstrap();
+void bootstrap();
