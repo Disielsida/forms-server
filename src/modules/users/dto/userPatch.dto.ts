@@ -3,7 +3,7 @@ import {
   IsNotEmpty,
   MaxLength,
   IsOptional,
-  IsDate,
+  IsDateString, // 👈 Вместо IsDate
   IsPhoneNumber,
   IsString,
   IsBoolean,
@@ -26,9 +26,14 @@ export class UserPatchDto {
   fullName: string;
 
   @IsOptional()
-  @IsDate()
-  @ApiProperty({ description: 'User birthday', nullable: true })
-  birthDate?: Date;
+  @IsDateString()
+  @ApiProperty({
+    description: 'User birthday',
+    nullable: true,
+    type: String,
+    format: 'date-time',
+  })
+  birthDate?: string;
 
   @IsOptional()
   @IsPhoneNumber('RU')
