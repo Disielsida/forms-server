@@ -8,7 +8,7 @@ import {
   UseGuards,
   Res,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { Response, Request as ExpressRequest } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from './auth.guard';
@@ -24,39 +24,40 @@ export class AuthController {
   @ApiOperation({ summary: 'login' })
   async login(
     @Body() { email, password }: LoginDto,
-    @Res() res: Response,
-  ): Promise<void> {
+    @Res({ passthrough: true }) response: Response,
+  ): Promise<{ message: string }> {
     const data = await this.authService.login(email, password);
 
-    if (!data) {
-      res.status(401).json({ message: 'Invalid credentials' });
-      return;
-    }
+    if (!data) throw new UnauthorizedException();
 
     const { access_token } = data;
 
-    res.cookie(jwtConstants.cookieName, access_token, {
+    response.cookie(jwtConstants.cookieName, access_token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: true, // требуется для работы в https (на render.com — обязательно)
+      sameSite: 'none', // иначе браузер заблокирует куку
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    res.status(201).json({ message: 'Login successful' });
+    return { message: 'Login successful' };
   }
 
   @Post('logout')
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Logout user' })
-  logout(@Res() res: Response): void {
-    res.clearCookie(jwtConstants.cookieName);
-    res.status(201).json({ message: 'Logout successful' });
+  logout(@Res({ passthrough: true }) response: Response): { message: string } {
+    response.clearCookie(jwtConstants.cookieName, {
+      secure: true,
+      sameSite: 'none',
+    });
+
+    return { message: 'Logout successful' };
   }
 
   @UseGuards(AuthGuard)
   @ApiOperation({ summary: 'Get current profile' })
   @Get('me')
-  getMe(@Request() req: any): any {
-    return req?.user ?? null;
+  getMe(@Request() req: ExpressRequest & { user?: unknown }): unknown {
+    return req.user;
   }
 }
